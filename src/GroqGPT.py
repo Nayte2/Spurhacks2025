@@ -1,41 +1,35 @@
+# GroqGPT.py
 import os
 import openai
+from .MangoDB import get_user_learning_style
 
-learningTypes = ["type1", "type2", "type3", "type4", "type5", "type6"]
-quizdata = [3, 4, 9, 12, 31, 6]
-topic = "geese"
+# Configure API key and endpoint
+openai.api_key = os.getenv("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-def getPercentages(quizdata):
-    p=quizdata.copy()
-    s=sum(p)
-    for i in range(len(p)):
-        p[i]=p[i]/s
-    return p, s
+# Prompts per learning style
+style_prompts = {
+    "Visual": "Explain this using diagrams, visual metaphors, or structure.",
+    "Auditory": "Explain this conversationally, like you're speaking to the user.",
+    "Reading/Writing": "Use written explanations, definitions, and summaries.",
+    "Logical": "Use step-by-step reasoning, analysis, and structure.",
+    "Social": "Frame this as a dialogue or collaborative discussion.",
+    "Solitary": "Encourage introspection and independent thinking in your explanation."
+}
 
-def selectMode(quizdata, topic):
-    percentages, sum = getPercentages(quizdata)
-    instructions = "write a single sentence about {t}. This user is ".format(t = topic)
-    for i in range(len(percentages)): 
-        instructions += ", {p:.2f}% {t} learning style".format(p=percentages[i], t=learningTypes[i])
-    return instructions
+def get_styled_response(user_id, user_question):
+    user_style = get_user_learning_style(user_id)
+    style_instruction = style_prompts.get(user_style, "Respond clearly and helpfully.")
 
-def main():
-    instructions = selectMode(quizdata, topic)
-    print(instructions)
-    '''# Create a client using OpenAI's compatible interface for Groq
-    client = openai.OpenAI(
-        base_url="https://api.groq.com/openai/v1",
-        api_key=os.environ.get("GROQ_API_KEY")
+    messages = [
+        {"role": "system", "content": style_instruction},
+        {"role": "user", "content": user_question}
+    ]
+
+    response = openai.ChatCompletion.create(
+        model="llama3-8b-8192",
+        messages=messages,
+        api_base=GROQ_API_URL
     )
 
-    # Send a chat completion request
-    response = client.chat.completions.create(
-        model="llama3-8b-8192",  # Groq does not support "gpt-4.1", use LLaMA 3 instead
-        messages=[
-            {"role": "user", "content": instructions}
-        ]
-    )
-    print(response.choices[0].message.content)'''
-
-if __name__ == "__main__":
-    main()
+    return response["choices"][0]["message"]["content"]
