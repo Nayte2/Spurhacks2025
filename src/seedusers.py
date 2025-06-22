@@ -20,6 +20,16 @@ test_users = [
             "Logical": 7, "Social": 2, "Solitary": 1
         },
         "primary_style": "Logical"
+    },
+    {
+        "user_id": "user_audio",
+        "email": "audio@example.com",
+        "password_hash": "hashed_pw3",
+        "learning_style_scores": {
+            "Visual": 1, "Auditory": 8, "Reading/Writing": 2,
+            "Logical": 1, "Social": 1, "Solitary": 1
+        },
+        "primary_style": "Auditory"
     }
 ]
 

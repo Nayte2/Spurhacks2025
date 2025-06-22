@@ -1,13 +1,10 @@
-# GroqGPT.py
 import os
-import openai
+import requests
 from .MangoDB import get_user_learning_style
 
-# Configure API key and endpoint
-openai.api_key = os.getenv("GROQ_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-# Prompts per learning style
 style_prompts = {
     "Visual": "Explain this using diagrams, visual metaphors, or structure.",
     "Auditory": "Explain this conversationally, like you're speaking to the user.",
@@ -21,15 +18,22 @@ def get_styled_response(user_id, user_question):
     user_style = get_user_learning_style(user_id)
     style_instruction = style_prompts.get(user_style, "Respond clearly and helpfully.")
 
-    messages = [
-        {"role": "system", "content": style_instruction},
-        {"role": "user", "content": user_question}
-    ]
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
 
-    response = openai.ChatCompletion.create(
-        model="llama3-8b-8192",
-        messages=messages,
-        api_base=GROQ_API_URL
-    )
+    data = {
+        "model": "llama3-8b-8192",
+        "messages": [
+            {"role": "system", "content": style_instruction},
+            {"role": "user", "content": user_question}
+        ]
+    }
 
-    return response["choices"][0]["message"]["content"]
+    response = requests.post(GROQ_API_URL, headers=headers, json=data)
+
+    if response.status_code == 200:
+        return response.json()["choices"][0]["message"]["content"]
+    else:
+        raise Exception(f"Groq API failed: {response.status_code} {response.text}")
